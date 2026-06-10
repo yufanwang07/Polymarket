@@ -1,0 +1,14 @@
+{
+  "locations": [
+    {
+      "slug_code": "bos",
+      "city_slug": "boston",
+      "city": "Boston",
+      "station": "KBOS",
+      "source": "CLIBOS",
+      "location": "Boston Logan International Airport",
+      "latitude": 42.3656,
+      "longitude": -71.0096
+    }
+  ]
+}

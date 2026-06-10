@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="300">
+  <title>Polymarket Weather Bot Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f5ef;
+      --panel: #ffffff;
+      --ink: #1d2528;
+      --muted: #66757a;
+      --line: #d9ded6;
+      --good: #176b4d;
+      --bad: #a13d32;
+      --warn: #9b6a1c;
+      --accent: #215a75;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    main { max-width: 1440px; margin: 0 auto; padding: 24px; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 26px; letter-spacing: 0; }
+    h2 { margin: 28px 0 10px; font-size: 16px; letter-spacing: 0; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .metric { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+    .metric div:first-child { color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; font-size: 24px; margin-top: 6px; }
+    .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; align-items: start; }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 9px 10px; font-size: 13px; vertical-align: top; }
+    th { color: var(--muted); font-weight: 650; background: #fbfaf6; }
+    tr:last-child td { border-bottom: none; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .status { font-weight: 700; }
+    .pending { color: var(--warn); }
+    .filled { color: var(--accent); }
+    .won { color: var(--good); }
+    .lost { color: var(--bad); }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+    .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-height: 220px; }
+    a { color: var(--accent); text-decoration: none; }
+    @media (max-width: 1000px) {
+      main { padding: 14px; }
+      .metrics, .grid { grid-template-columns: 1fr; }
+      header { display: block; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Polymarket Weather Bot Dashboard</h1>
+      <div class="muted">Target 2026-06-11 | Generated 2026-06-10T23:44:12+00:00 | Local bot state only</div>
+    </div>
+    <div class="muted">Settlement stations: KNYC, KSFO, KMIA, KMDW, KLAX</div>
+  </header>
+
+  <section class="metrics">
+    <div class="metric"><div>Positions</div><strong>10</strong></div>
+    <div class="metric"><div>Cost</div><strong>$0.16</strong></div>
+    <div class="metric"><div>Mark Value</div><strong>$0.01</strong></div>
+    <div class="metric"><div>P/L</div><strong class="bad">-$0.15</strong></div>
+  </section>
+
+  <div class="grid">
+    <section>
+      <h2>Placed Orders And Positions</h2>
+      <table><thead><tr><th>Status</th><th>Book</th><th>Location</th><th>Market</th><th class="num">Qty</th><th class="num">Entry</th><th class="num">Mark</th><th class="num">P/L</th><th class="num">Edge</th><th>Order</th></tr></thead><tbody><tr><td class="status cancelled">cancelled</td><td>live</td><td>Los Angeles<br><span class="muted">KLAX Los Angeles International Airport</span></td><td>NO 71 to 72<br><span class="muted">tc-temp-laxhigh-2026-06-10-gte71lt72f</span></td><td class="num">2</td><td class="num">0.56</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.39</td><td>AJ11Y1WDW289</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>Los Angeles<br><span class="muted">KLAX Los Angeles International Airport</span></td><td>NO 77 to 78<br><span class="muted">tc-temp-laxhigh-2026-06-10-gte77lt78f</span></td><td class="num">1</td><td class="num">0.77</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.18</td><td>AJ0EWTEJW24T</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>Chicago<br><span class="muted">KMDW Chicago Midway Airport</span></td><td>NO 92 to 93<br><span class="muted">tc-temp-mdwhigh-2026-06-10-gte92lt93f</span></td><td class="num">2</td><td class="num">0.53</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.42</td><td>AJ0964Z2227E</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>Chicago<br><span class="muted">KMDW Chicago Midway Airport</span></td><td>YES 94 to 95<br><span class="muted">tc-temp-mdwhigh-2026-06-10-gte94lt95f</span></td><td class="num">3</td><td class="num">0.14</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.635</td><td>AHZA25AMJ28P</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>Miami<br><span class="muted">KMIA Miami International Airport</span></td><td>NO 89 to 90<br><span class="muted">tc-temp-miahigh-2026-06-10-gte89lt90f</span></td><td class="num">1</td><td class="num">0.57</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.155</td><td>AJ0RETFGT27N</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>New York City<br><span class="muted">KNYC Central Park</span></td><td>YES 77 to 78<br><span class="muted">tc-temp-nychigh-2026-06-10-gte77lt78f</span></td><td class="num">1</td><td class="num">0.07</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.155</td><td>AHZXH1RHR24K</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>New York City<br><span class="muted">KNYC Central Park</span></td><td>NO 83 or above<br><span class="muted">tc-temp-nychigh-2026-06-10-gte83f</span></td><td class="num">2</td><td class="num">0.6</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.325</td><td>AJ0860GWA27T</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>San Francisco<br><span class="muted">KSFO San Francisco International Airport</span></td><td>YES 71 to 72<br><span class="muted">tc-temp-sfohigh-2026-06-10-gte71lt72f</span></td><td class="num">1</td><td class="num">0.17</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.18</td><td>AHZVBX9QA26A</td></tr><tr><td class="status cancelled">cancelled</td><td>live</td><td>San Francisco<br><span class="muted">KSFO San Francisco International Airport</span></td><td>YES 70 or below<br><span class="muted">tc-temp-sfohigh-2026-06-10-lt71f</span></td><td class="num">2</td><td class="num">0.07</td><td class="num">0</td><td class="num ">+$0</td><td class="num">0.505</td><td>AHZQ5SQ2027N</td></tr><tr><td class="status filled">filled</td><td>paper</td><td>Chicago<br><span class="muted">KMDW Chicago Midway Airport</span></td><td>YES 94 to 95<br><span class="muted">tc-temp-mdwhigh-2026-06-10-gte94lt95f</span></td><td class="num">1</td><td class="num">0.16</td><td class="num">0.01</td><td class="num bad">-$0.15</td><td class="num">0.615</td><td></td></tr></tbody></table>
+    </section>
+    <section>
+      <h2>P/L Graph</h2>
+      <div class="chart"><svg viewBox="0 0 560 180" width="100%" height="210" role="img"><line x1="24" y1="24.0" x2="536" y2="24.0" stroke="#d9ded6"/><polyline fill="none" stroke="#215a75" stroke-width="3" points="24.0,156.0 80.9,156.0 137.8,156.0 194.7,156.0 251.6,156.0 308.4,156.0 365.3,156.0 422.2,156.0 479.1,156.0 536.0,156.0"/><text x="24" y="18" fill="#66757a" font-size="12">Cumulative marked P/L</text><text x="24" y="176" fill="#66757a" font-size="12">Last -$0.15</text></svg></div>
+      <div class="muted">Pending 0 | Filled 1 | Won 0 | Lost 0</div>
+    </section>
+  </div>
+
+  <section>
+    <h2>Weather Edge Location Table</h2>
+    <table><thead><tr><th>Location</th><th>Favorite</th><th>Forecast</th><th>Ensemble</th><th>Models</th><th class="num">Edge</th><th class="num">Ens Edge</th><th class="num">Traded</th><th>Event</th></tr></thead><tbody><tr><td>San Francisco<br><span class="muted">KSFO San Francisco International Airport</span></td><td>84 to 85<br><span class="muted">28%</span></td><td>34.0C/93F<br><span class="muted">90 or above</span></td><td>30.3C/87F<br><span class="muted">86 to 87</span></td><td>N/A</td><td class="num">+4.8C</td><td class="num">+1.2C</td><td class="num">6.8K</td><td><a href="https://polymarket.us/event/temp-sfohigh-2026-06-11">temp-sfohigh-2026-06-11</a></td></tr><tr><td>New York City<br><span class="muted">KNYC Central Park</span></td><td>92 to 93<br><span class="muted">49%</span></td><td>35.8C/96F<br><span class="muted">96 or above</span></td><td>34.8C/95F<br><span class="muted">94 to 95</span></td><td>N/A</td><td class="num">+2.2C</td><td class="num">+1.2C</td><td class="num">4.0K</td><td><a href="https://polymarket.us/event/temp-nychigh-2026-06-11">temp-nychigh-2026-06-11</a></td></tr><tr><td>Los Angeles<br><span class="muted">KLAX Los Angeles International Airport</span></td><td>74 to 75<br><span class="muted">50%</span></td><td>24.6C/76F<br><span class="muted">76 to 77</span></td><td>25.1C/77F<br><span class="muted">76 to 77</span></td><td>N/A</td><td class="num">+1.0C</td><td class="num">+1.5C</td><td class="num">7.5K</td><td><a href="https://polymarket.us/event/temp-laxhigh-2026-06-11">temp-laxhigh-2026-06-11</a></td></tr><tr><td>Chicago<br><span class="muted">KMDW Chicago Midway Airport</span></td><td>88 to 89<br><span class="muted">40%</span></td><td>32.1C/90F<br><span class="muted">90 to 91</span></td><td>31.5C/89F<br><span class="muted">88 to 89</span></td><td>N/A</td><td class="num">+0.7C</td><td class="num">+0.1C</td><td class="num">4.0K</td><td><a href="https://polymarket.us/event/temp-mdwhigh-2026-06-11">temp-mdwhigh-2026-06-11</a></td></tr><tr><td>Miami<br><span class="muted">KMIA Miami International Airport</span></td><td>89 to 90<br><span class="muted">58%</span></td><td>31.8C/89F<br><span class="muted">89 to 90</span></td><td>29.7C/85F<br><span class="muted">85 to 86</span></td><td>N/A</td><td class="num">-0.1C</td><td class="num">-2.3C</td><td class="num">3.7K</td><td><a href="https://polymarket.us/event/temp-miahigh-2026-06-11">temp-miahigh-2026-06-11</a></td></tr></tbody></table>
+  </section>
+</main>
+</body>
+</html>

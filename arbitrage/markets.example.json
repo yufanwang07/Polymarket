@@ -1,0 +1,18 @@
+[
+  {
+    "event_id": "cs2-faze-navi-example",
+    "market_slug": "faze-clan-vs-navi-example",
+    "outcomes": [
+      {
+        "name": "FaZe Clan",
+        "intent": "ORDER_INTENT_BUY_LONG",
+        "aliases": ["FaZe"]
+      },
+      {
+        "name": "NAVI",
+        "intent": "ORDER_INTENT_BUY_SHORT",
+        "aliases": ["Natus Vincere"]
+      }
+    ]
+  }
+]

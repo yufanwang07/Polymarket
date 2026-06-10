@@ -1,0 +1,24 @@
+{
+  "matches": [
+    {
+      "id": "cs2-faze-navi-example",
+      "game": "cs2",
+      "league": {"name": "example-cup"},
+      "teams": {"a": "FaZe Clan", "b": "NAVI"},
+      "books": [
+        {
+          "name": "ggbet",
+          "markets": [
+            {
+              "type": "moneyline",
+              "prices": [
+                {"team": "FaZe Clan", "decimal": "1.57"},
+                {"team": "NAVI", "decimal": "2.28"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "event_id": "cs2-faze-navi-example",
+    "bookmaker": "example-book",
+    "sport": "cs2",
+    "league": "example-cup",
+    "team_a": "FaZe Clan",
+    "team_b": "NAVI",
+    "odds_a": "1.57",
+    "odds_b": "2.28",
+    "market_slug": "faze-clan-vs-navi-example"
+  }
+]
