@@ -17,6 +17,7 @@ from arbitrage_bot import (
     build_fair_markets,
     build_hedge_intents,
     devig_two_way,
+    fetch_market_by_slug,
     fetch_market_book,
     match_outcome,
     normalize_odds_row,
@@ -181,6 +182,22 @@ class ArbitrageBotTests(unittest.TestCase):
         self.assertEqual(long_book.best_ask, Decimal("0.73"))
         self.assertEqual(short_book.best_bid, Decimal("0.27"))
         self.assertEqual(short_book.best_ask, Decimal("0.48"))
+
+    def test_fetch_market_by_slug_falls_back_to_search(self):
+        payload = {"markets": [{"slug": "wide-market", "marketSides": [{"description": "Yes"}]}]}
+
+        def fake_get_json(url, params=None):
+            if url.endswith("/wide-market"):
+                from arbitrage_bot import ArbitrageBotError
+
+                raise ArbitrageBotError("404")
+            self.assertEqual(params, {"slug": "wide-market", "limit": 1})
+            return payload
+
+        with patch("arbitrage_bot.http_get_json", side_effect=fake_get_json):
+            market = fetch_market_by_slug("wide-market")
+
+        self.assertEqual(market["slug"], "wide-market")
 
     def test_reconcile_live_state_adds_fill_for_missing_entry_order_with_position(self):
         state = {

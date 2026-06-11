@@ -666,7 +666,10 @@ def fetch_mapping_from_gateway(fair: FairMarket) -> MarketMapping | None:
 
 
 def fetch_market_by_slug(slug: str) -> dict[str, Any] | None:
-    payload = http_get_json(f"{POLYMARKET_US_MARKETS_URL}/{slug}")
+    try:
+        payload = http_get_json(f"{POLYMARKET_US_MARKETS_URL}/{slug}")
+    except ArbitrageBotError:
+        payload = None
     if isinstance(payload, dict):
         market = payload.get("market")
         if isinstance(market, dict):

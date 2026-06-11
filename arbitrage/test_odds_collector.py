@@ -9,9 +9,14 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from odds_collector import (
+    OddsCollectorError,
+    collect_cross_venue,
     collect_generic_json,
     collect_odds_api_io,
     collect_the_odds_api,
+    fetch_kalshi_references,
+    infer_kalshi_game_labels,
+    kalshi_tickers_from_url,
     main,
     parse_egamersworld_text,
     outcomes_to_two_way_odds,
@@ -56,7 +61,10 @@ class OddsCollectorTests(unittest.TestCase):
             }
         ]
         args = argparse.Namespace(
-            api_key="key",
+            provider="the-odds-api",
+            api_key=None,
+            the_odds_api_key=None,
+            the_odds_api_keys="key-a,key-b",
             sport=["esports_cs2"],
             regions="eu",
             markets="h2h",
@@ -64,7 +72,11 @@ class OddsCollectorTests(unittest.TestCase):
             max_events_per_sport=10,
         )
 
-        with patch("odds_collector.http_get_json", return_value=events):
+        def fake_get_json(url, params=None, verify_ssl=True):
+            self.assertEqual(params["apiKey"], "key-a")
+            return events
+
+        with patch("odds_collector.http_get_json", side_effect=fake_get_json):
             rows = collect_the_odds_api(args, {"evt-1": "faze-vs-navi"})
 
         self.assertEqual(len(rows), 1)
@@ -111,6 +123,7 @@ class OddsCollectorTests(unittest.TestCase):
             }
         ]
         args = argparse.Namespace(
+            provider="odds-api-io",
             odds_api_io_key=None,
             odds_api_io_keys="key-a,key-b",
             api_key=None,
@@ -119,7 +132,7 @@ class OddsCollectorTests(unittest.TestCase):
             max_events_per_sport=10,
         )
 
-        def fake_get_json(url, params=None):
+        def fake_get_json(url, params=None, verify_ssl=True):
             if url.endswith("/v3/events"):
                 self.assertEqual(params["apiKey"], "key-a")
                 return events
@@ -137,6 +150,163 @@ class OddsCollectorTests(unittest.TestCase):
         self.assertEqual(rows[0].bookmaker, "GG.BET")
         self.assertEqual(rows[0].market_slug, "faze-vs-navi")
         self.assertEqual(rows[1].odds_a, Decimal("1.60"))
+
+    def test_collect_cross_venue_uses_tighter_kalshi_reference(self):
+        args = argparse.Namespace(
+            target_limit=10,
+            target_max_pages=1,
+            reference_limit=10,
+            reference_max_pages=1,
+            cross_venue_sources="kalshi",
+            cross_venue_fetch_books=False,
+            target_scan_limit=10,
+            target_min_spread=Decimal("0.10"),
+            reference_max_spread=Decimal("0.04"),
+            min_reference_spread_advantage=Decimal("0.05"),
+            match_threshold=Decimal("0.60"),
+            target_keywords="",
+            kalshi_category="",
+            kalshi_series="KXVALORANTGAME",
+            kalshi_market_url=[],
+            kalshi_ticker=[],
+        )
+        polymarket_payload = {
+            "markets": [
+                {
+                    "slug": "will-nikita-kucherov-win-hart",
+                    "title": "Nikita Kucherov",
+                    "question": "NHL Hart Memorial Trophy Winner",
+                    "description": "Will Nikita Kucherov win the NHL Hart Memorial Trophy?",
+                    "active": True,
+                    "closed": False,
+                    "category": "sports",
+                    "sportsMarketType": "futures",
+                    "outcomes": '["Yes","No"]',
+                    "bestBidQuote": {"value": "0.36"},
+                    "bestAskQuote": {"value": "0.85"},
+                    "endDate": "2026-07-14T16:20:09Z",
+                }
+            ]
+        }
+        kalshi_payload = {
+            "markets": [
+                {
+                    "ticker": "KXVALORANTGAME-26JUN121300VITTH-TH",
+                    "title": "Will Nikita Kucherov win the NHL Hart Memorial Trophy?",
+                    "yes_sub_title": "Yes",
+                    "no_sub_title": "No",
+                    "yes_bid_dollars": "0.40",
+                    "yes_ask_dollars": "0.42",
+                    "updated_time": "2026-06-10T20:00:00Z",
+                }
+            ],
+            "cursor": "",
+        }
+
+        def fake_get_json(url, params=None, verify_ssl=True):
+            if "gateway.polymarket.us" in url:
+                return polymarket_payload
+            if "external-api.kalshi.com" in url:
+                self.assertEqual(params["series_ticker"], "KXVALORANTGAME")
+                return kalshi_payload
+            raise AssertionError(url)
+
+        with patch("odds_collector.http_get_json", side_effect=fake_get_json):
+            rows = collect_cross_venue(args)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].event_id, "will-nikita-kucherov-win-hart")
+        self.assertEqual(rows[0].bookmaker, "cross-venue:kalshi")
+        self.assertEqual(rows[0].market_slug, "will-nikita-kucherov-win-hart")
+        self.assertEqual((Decimal("1") / rows[0].odds_a).quantize(Decimal("0.01")), Decimal("0.41"))
+
+    def test_kalshi_url_and_game_title_helpers(self):
+        url = (
+            "https://kalshi.com/markets/kxvalorantgame/valorant-game-winner/"
+            "kxvalorantgame-26jun121300vitth?op_market_ticker=KXVALORANTGAME-26JUN121300VITTH-TH"
+        )
+
+        self.assertEqual(kalshi_tickers_from_url(url), ["KXVALORANTGAME-26JUN121300VITTH-TH"])
+        self.assertEqual(
+            infer_kalshi_game_labels(
+                "Valorant: Team Vitality vs Team Heretics Winner?",
+                "Team Heretics",
+                "No",
+            ),
+            ("Team Heretics", "Team Vitality"),
+        )
+
+    def test_kalshi_auto_discovers_esports_series(self):
+        args = argparse.Namespace(
+            reference_limit=10,
+            reference_max_pages=2,
+            kalshi_category="",
+            kalshi_series="auto",
+            kalshi_series_scan_limit=100,
+            kalshi_market_scan_limit=100,
+            kalshi_series_keywords="valorant,game winner,esports",
+            target_keywords="",
+            kalshi_market_url=[],
+            kalshi_ticker=[],
+        )
+        series_payload = {
+            "series": [
+                {"ticker": "KXICEERO", "title": "ICE funding", "category": "Politics", "tags": []},
+                {
+                    "ticker": "KXVALORANTGAME",
+                    "title": "Valorant game winner",
+                    "category": "Sports",
+                    "tags": ["Esports"],
+                },
+            ],
+            "cursor": "",
+        }
+        broad_markets_payload = {
+            "markets": [
+                {
+                    "ticker": "KXVALORANTGAME-26JUN121300VITTH-TH",
+                    "event_ticker": "KXVALORANTGAME-26JUN121300VITTH",
+                    "title": "Will Team Heretics win the Team Vitality vs. Team Heretics Valorant match?",
+                    "yes_sub_title": "Team Heretics",
+                    "no_sub_title": "Team Vitality",
+                    "yes_bid_dollars": "0.40",
+                    "yes_ask_dollars": "0.42",
+                }
+            ],
+            "cursor": "",
+        }
+        markets_payload = {
+            "markets": [
+                {
+                    "ticker": "KXVALORANTGAME-26JUN121300VITTH-TH",
+                    "title": "Will Team Heretics win the Team Vitality vs. Team Heretics Valorant match?",
+                    "yes_sub_title": "Team Heretics",
+                    "no_sub_title": "No",
+                    "yes_bid_dollars": "0.40",
+                    "yes_ask_dollars": "0.42",
+                    "updated_time": "2026-06-10T20:00:00Z",
+                }
+            ],
+            "cursor": "",
+        }
+
+        def fake_get_json(url, params=None, verify_ssl=True):
+            if url.endswith("/series"):
+                return series_payload
+            if url.endswith("/markets"):
+                if not params or "series_ticker" not in params:
+                    return broad_markets_payload
+                self.assertEqual(params["series_ticker"], "KXVALORANTGAME")
+                return markets_payload
+            raise AssertionError(url)
+
+        with patch("odds_collector.http_get_json", side_effect=fake_get_json):
+            references = fetch_kalshi_references(args)
+
+        self.assertEqual(len(references), 1)
+        self.assertEqual(references[0].reference_id, "KXVALORANTGAME-26JUN121300VITTH-TH")
+        self.assertEqual(references[0].outcome_a, "Team Heretics")
+        self.assertEqual(references[0].outcome_b, "Team Vitality")
 
     def test_collect_generic_json_with_configurable_paths(self):
         payload = {
@@ -392,6 +562,13 @@ class OddsCollectorTests(unittest.TestCase):
 
             self.assertEqual(code, 1)
             self.assertEqual(output.read_text(encoding="utf-8"), original)
+
+    def test_main_returns_one_on_collector_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "odds.jsonl"
+            argv = ["odds_collector.py", "--provider", "the-odds-api", "--once", "--output", str(output)]
+            with patch("sys.argv", argv), patch("odds_collector.collect", side_effect=OddsCollectorError("boom")):
+                self.assertEqual(main(), 1)
 
 
 if __name__ == "__main__":

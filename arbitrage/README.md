@@ -43,43 +43,94 @@ involved.
 
 The collector writes the `odds.jsonl` file consumed by `arbitrage_bot.py`.
 
-Preferred route: use an odds API/feed. `odds-api.io` has a free tier and a v3
-flow that fits this bot: fetch esports events, batch-fetch odds with
-`/v3/odds/multi`, then upsert `odds.jsonl`.
+Preferred route: use The Odds API. The keys in this repo are for
+`api.the-odds-api.com`, not `api.odds-api.io`.
 
-Odds-API.io, one pull:
+The Odds API, one pull using the all-sports `upcoming` endpoint:
 
 ```bash
-export ODDS_API_IO_KEY="..."
-# Optional: rotate across multiple free-tier keys
-export ODDS_API_IO_KEYS="key1,key2,key3"
+export THE_ODDS_API_KEY="..."
+# Optional: rotate across multiple keys
+export THE_ODDS_API_KEYS="key1,key2,key3"
 
 python3 arbitrage/odds_collector.py \
-  --provider odds-api-io \
+  --provider the-odds-api \
   --once \
-  --sport esports \
-  --bookmakers GG.BET,Pinnacle \
+  --sport upcoming \
+  --regions us \
   --output arbitrage/odds.jsonl
 ```
 
-Odds-API.io, continuous:
+The Odds API, continuous:
 
 ```bash
 python3 arbitrage/odds_collector.py \
-  --provider odds-api-io \
-  --sport esports \
-  --bookmakers GG.BET,Pinnacle \
+  --provider the-odds-api \
+  --sport upcoming \
+  --regions us \
   --refresh-seconds 45 \
   --output arbitrage/odds.jsonl
 ```
 
-If the sport slug differs on your account, discover supported sports:
+If you have esports-specific sport keys on your plan, use them instead of
+`upcoming`:
 
 ```bash
-curl "https://api.odds-api.io/v3/sports"
+python3 arbitrage/odds_collector.py \
+  --provider the-odds-api \
+  --sport esports_cs2 \
+  --sport esports_dota2 \
+  --sport esports_lol \
+  --bookmakers ggbet,pinnacle,betonlineag,bovada \
+  --refresh-seconds 30 \
+  --output arbitrage/odds.jsonl
 ```
 
-Then pass the returned slug with `--sport`.
+The older `odds-api-io` provider remains available, but it requires keys issued
+by `api.odds-api.io`; The Odds API keys will return `401` there.
+
+Cross-venue wide-spread discovery:
+
+```bash
+python3 arbitrage/odds_collector.py \
+  --provider cross-venue \
+  --cross-venue-sources kalshi \
+  --kalshi-series auto \
+  --kalshi-series-scan-limit 1000 \
+  --kalshi-market-scan-limit 5000 \
+  --target-scan-limit 15000 \
+  --target-limit 1000 \
+  --reference-limit 1000 \
+  --target-min-spread 0.10 \
+  --reference-max-spread 0.04 \
+  --min-reference-spread-advantage 0.05 \
+  --refresh-seconds 45 \
+  --output arbitrage/odds.jsonl
+```
+
+This scans open Polymarket US markets, keeps only wide target spreads, then
+discovers relevant Kalshi series, scans their open markets, and looks for
+tighter matching reference markets. The output is still normal bot odds:
+`team_a`/`team_b`, synthetic fair decimal odds, and `market_slug`.
+
+Use this as a rough fair-value feed, not as proof of an arb. Cross-venue market
+wording can differ. The matcher is intentionally conservative and may write zero
+rows until a close match is found. To inspect one loop without touching your
+main odds file:
+
+```bash
+python3 arbitrage/odds_collector.py \
+  --provider cross-venue \
+  --once \
+  --cross-venue-sources kalshi \
+  --kalshi-series auto \
+  --kalshi-market-url "https://kalshi.com/markets/kxvalorantgame/valorant-game-winner/kxvalorantgame-26jun121300vitth?op_market_ticker=KXVALORANTGAME-26JUN121300VITTH-TH" \
+  --target-keywords vitality,heretics \
+  --target-scan-limit 15000 \
+  --target-limit 1000 \
+  --reference-limit 1000 \
+  --output /tmp/cross-venue-odds.jsonl
+```
 
 Direct consumer-site scraping for books such as GGBet or SpinBetter is brittle,
 dynamic, and Terms-of-Service sensitive. The public scraper paths below are
@@ -105,32 +156,6 @@ python3 arbitrage/odds_collector.py \
   --render-html \
   --egw-game cs2 \
   --refresh-seconds 45 \
-  --output arbitrage/odds.jsonl
-```
-
-The Odds API, one pull:
-
-```bash
-export THE_ODDS_API_KEY="..."
-
-python3 arbitrage/odds_collector.py \
-  --provider the-odds-api \
-  --once \
-  --sport esports_cs2 \
-  --bookmakers ggbet,pinnacle,betonlineag,bovada \
-  --output arbitrage/odds.jsonl
-```
-
-The Odds API, continuous:
-
-```bash
-python3 arbitrage/odds_collector.py \
-  --provider the-odds-api \
-  --sport esports_cs2 \
-  --sport esports_dota2 \
-  --sport esports_lol \
-  --bookmakers ggbet,pinnacle,betonlineag,bovada \
-  --refresh-seconds 30 \
   --output arbitrage/odds.jsonl
 ```
 
@@ -252,8 +277,7 @@ Continuous dry run. This loops until you stop it with `Ctrl-C`:
 
 ```bash
 python3 arbitrage/arbitrage_bot.py \
-  --odds-file odds.jsonl \
-  --markets-file markets.json \
+  --odds-file arbitrage/odds.jsonl \
   --quote-dollars 5 \
   --max-orders-per-cycle 2 \
   --write-orders arbitrage/orders.jsonl
@@ -264,8 +288,7 @@ Useful safety knobs:
 ```bash
 python3 arbitrage/arbitrage_bot.py \
   --once \
-  --odds-file odds.jsonl \
-  --markets-file markets.json \
+  --odds-file arbitrage/odds.jsonl \
   --min-edge 0.07 \
   --min-locked-edge 0.07 \
   --min-spread 0.05 \
@@ -297,7 +320,7 @@ Then run:
 ```bash
 python3 arbitrage/arbitrage_bot.py \
   --once \
-  --odds-file odds.jsonl \
+  --odds-file arbitrage/odds.jsonl \
   --markets-file markets.json \
   --fills-file fills.json
 ```
@@ -316,8 +339,7 @@ export POLYMARKET_KEY_ID="..."
 export POLYMARKET_SECRET_KEY="..."
 python3 arbitrage/arbitrage_bot.py \
   --live \
-  --odds-file odds.jsonl \
-  --markets-file markets.json \
+  --odds-file arbitrage/odds.jsonl \
   --quote-dollars 1 \
   --max-orders-per-cycle 1 \
   --max-order-age-seconds 3 \
@@ -330,8 +352,7 @@ By default live mode also runs reconciliation before each cycle:
 python3 arbitrage/arbitrage_bot.py \
   --live \
   --once \
-  --odds-file odds.jsonl \
-  --markets-file markets.json \
+  --odds-file arbitrage/odds.jsonl \
   --quote-dollars 1 \
   --max-orders-per-cycle 1
 ```
